@@ -78,7 +78,7 @@ defmodule OMG.API.RootChainCoordinator do
     {:noreply, state}
   end
 
-  def handle_info(:timeout, state) do
+  def handle_info(:timeout, _state) do
     Logger.warn(fn -> "No new activity for 60 seconds. Are we dead?" end)
   end
 

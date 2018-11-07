@@ -55,7 +55,7 @@ defmodule OMG.API.State.PropTest.MutatedTransaction do
 
   @doc "check if OMG.API.Core.recover_tx validate transaction and PropTest.Transaction.pre invalidate transaction"
   def pre(state, [tx | _] = args) do
-    create_signed = &OMG.API.TestHelper.create_signed/3
+    create_signed = &OMG.API.TestHelper.create_signed/2
 
     {valid, _} =
       tx

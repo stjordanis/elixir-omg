@@ -76,11 +76,10 @@ defmodule OMG.API.TestHelper do
   """
   @spec create_recovered(
           list({pos_integer, pos_integer, 0 | 1, map}),
-          Transaction.currency(),
-          list({Crypto.address_t(), pos_integer})
+          list({Crypto.address_t(), Transaction.currency(), pos_integer})
         ) :: Transaction.Recovered.t()
-  def create_recovered(inputs, currency, outputs) do
-    signed_tx = create_signed(inputs, currency, outputs)
+  def create_recovered(inputs, outputs) do
+    signed_tx = create_signed(inputs, outputs)
     {:ok, recovered} = Transaction.Recovered.recover_from(signed_tx)
     recovered
   end
@@ -90,24 +89,22 @@ defmodule OMG.API.TestHelper do
   """
   @spec create_signed(
           list({pos_integer, pos_integer, 0 | 1, map}),
-          Transaction.currency(),
-          list({Crypto.address_t(), pos_integer})
+          list({Crypto.address_t(), Transaction.currency(), pos_integer})
         ) :: Transaction.Signed.t()
-  def create_signed(inputs, currency, outputs) do
+  def create_signed(inputs, outputs) do
     raw_tx =
       Transaction.new(
         inputs |> Enum.map(fn {blknum, txindex, oindex, _} -> {blknum, txindex, oindex} end),
-        currency,
-        outputs |> Enum.map(fn {newowner, amount} -> {newowner.addr, amount} end)
+        outputs |> Enum.map(fn {owner, currency, amount} -> {owner.addr, currency, amount} end)
       )
 
     [priv1, priv2 | _] = inputs |> Enum.map(fn {_, _, _, owner} -> owner.priv end) |> Enum.concat([<<>>, <<>>])
 
-    Transaction.sign(raw_tx, priv1, priv2)
+    Transaction.sign(raw_tx, [priv1, priv2])
   end
 
-  def create_encoded(inputs, cur12, outputs) do
-    signed_tx = create_signed(inputs, cur12, outputs)
+  def create_encoded(inputs, outputs) do
+    signed_tx = create_signed(inputs, outputs)
     Transaction.Signed.encode(signed_tx)
   end
 

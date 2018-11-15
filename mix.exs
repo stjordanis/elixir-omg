@@ -23,6 +23,7 @@ defmodule OMG.Umbrella.MixProject do
 
   defp deps do
     [
+      {:distillery, "~> 2.0"},
       {:dialyxir, "~> 0.5", only: [:prod], runtime: false},
       {:credo, "~> 0.10.0", only: [:dev, :test], runtime: false},
       {

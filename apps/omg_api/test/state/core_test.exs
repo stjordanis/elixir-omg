@@ -94,7 +94,10 @@ defmodule OMG.API.State.CoreTest do
 
     state1
     |> (&Core.exec(
-          Test.create_recovered([{1000, 0, 0, alice}, {0, 0, 0, alice}], [{alice, not_eth(), 3}, {alice, not_eth(), 0}]),
+          Test.create_recovered(
+            [{1000, 0, 0, alice}, {0, 0, 0, alice}],
+            [{alice, not_eth(), 3}, {alice, not_eth(), 0}]
+          ),
           zero_fees_map(),
           &1
         )).()

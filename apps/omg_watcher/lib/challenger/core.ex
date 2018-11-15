@@ -49,7 +49,7 @@ defmodule OMG.Watcher.Challenger.Core do
        sigs: sigs
      }} = Transaction.Signed.decode(challenging_tx.txbytes)
 
-    sigs = Enum.reduce(sigs, &<>/2)
+    sigs = Enum.join(sigs)
 
     Challenge.create(
       cutxopos,

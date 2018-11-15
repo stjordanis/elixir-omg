@@ -62,7 +62,7 @@ defmodule OMG.API.State.Transaction.Recovered do
   end
 
   @doc """
-  Checks if given spenders signed the transaction
+  Checks if everyone of the given spenders signed the transaction
   """
   @spec check_spenders_authorized(t(), list()) :: :ok
   def check_spenders_authorized(%__MODULE__{spenders: spenders}, inputs_spenders) do

@@ -69,7 +69,7 @@ defmodule OMG.Watcher.DB.TxOutput do
        sigs: sigs
      }} = Transaction.Signed.decode(tx.txbytes)
 
-    sigs = Enum.reduce(sigs, &<>/2)
+    sigs = Enum.join(sigs)
 
     %{
       utxo_pos: utxo_pos,

@@ -46,6 +46,8 @@ defmodule OMG.API.RootChainCoordinator do
   use GenServer
 
   def init(allowed_services) do
+    IO.puts("url is #{inspect Application.get_env(:ethereumex, :url)}")
+     
     {:ok, rootchain_height} = Eth.get_ethereum_height()
 
     height_sync_interval = Application.get_env(:omg_api, :rootchain_height_sync_interval_ms)

@@ -4,7 +4,7 @@ defmodule OMG.API.MixProject do
   def project do
     [
       app: :omg_api,
-      version: "0.1.0",
+      version: "0.1.0" <> OMG.API.MixProject.build_meta_data(),
       build_path: "../../_build",
       config_path: "../../config/config.exs",
       deps_path: "../../deps",
@@ -50,5 +50,14 @@ defmodule OMG.API.MixProject do
       {:omg_eth, in_umbrella: true},
       {:omg_jsonrpc, in_umbrella: true}
     ]
+  end
+
+  def build_meta_data do
+    # in accordance with semver, build metadata is separated by plus sign
+    with {<<hash::binary-size(8), _::binary>>, 0} <- System.cmd("git", ["rev-parse", "HEAD"]) do
+      "+" <> hash
+    else
+      {_, 128} -> ""
+    end
   end
 end

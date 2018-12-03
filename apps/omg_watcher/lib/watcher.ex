@@ -14,4 +14,9 @@
 
 defmodule OMG.Watcher do
   @moduledoc false
+
+  def version do
+    {:ok, app_atom} = :application.get_application(__MODULE__)
+    Application.loaded_applications |> Enum.find(&(elem(&1, 0) == app_atom)) |> elem(2)
+  end
 end

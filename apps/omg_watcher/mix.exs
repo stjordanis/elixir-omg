@@ -4,7 +4,7 @@ defmodule OMG.Watcher.Mixfile do
   def project do
     [
       app: :omg_watcher,
-      version: "0.0.1",
+      version: "0.0.1" <> OMG.API.MixProject.build_meta_data(),
       build_path: "../../_build",
       config_path: "../../config/config.exs",
       deps_path: "../../deps",

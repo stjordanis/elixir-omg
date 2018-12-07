@@ -12,7 +12,7 @@ config :omg_api,
 ```
 Otherwise one might experience a long wait before the child chain allows the deposits to be spent (which every invocation of `start_extended_perftest` waits for).
 
-Run `cd apps/omg_performance && iex -S mix run --config ~/config.exs` and inside REPL do:
+Run `iex -S mix run --no-start --config ~/config.exs` and inside REPL do:
 
 ```elixir
 

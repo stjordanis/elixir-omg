@@ -16,6 +16,7 @@ defmodule OMG.Watcher.Application do
   @moduledoc false
   use Application
   use OMG.API.LoggerExt
+  import Supervisor.Spec
 
   def start(_type, _args) do
     DeferredConfig.populate(:omg_watcher)
@@ -129,6 +130,7 @@ defmodule OMG.Watcher.Application do
              }
            ]}
       },
+      worker(Cachex, [:my_cache, []]),
       # Start the endpoint when the application starts
       %{
         id: OMG.Watcher.Web.Endpoint,

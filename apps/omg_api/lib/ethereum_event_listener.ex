@@ -91,7 +91,7 @@ defmodule OMG.API.EthereumEventListener do
   defp sync_height({core, callbacks}, next_sync_height) do
     case Core.get_events_height_range_for_next_sync(core, next_sync_height) do
       {:get_events, {event_height_lower_bound, event_height_upper_bound}, core, db_updates} ->
-        {:ok, events} = callbacks.get_ethereum_events_callback.(event_height_lower_bound, event_height_upper_bound)
+        {:ok, events} = get_cache(event_height_lower_bound, event_height_upper_bound, callbacks.get_ethereum_events_callback)
         {:ok, db_updates_from_callback} = callbacks.process_events_callback.(events)
         :ok = OMG.DB.multi_update(db_updates ++ db_updates_from_callback)
         :ok = RootChainCoordinator.check_in(next_sync_height, core.service_name)
@@ -107,6 +107,30 @@ defmodule OMG.API.EthereumEventListener do
         _ = Logger.debug(fn -> "Not getting events" end)
         {core, callbacks}
     end
+  end
+
+  defp get_cache(event_height_lower_bound, event_height_upper_bound, _) when event_height_lower_bound >= event_height_upper_bound, do: {:ok, []}
+
+  defp get_cache(event_height_lower_bound, event_height_upper_bound, get_ethereum_events_callback) do
+    Cachex.execute!(:my_cache, fn(cache) ->
+      events = IO.inspect Enum.flat_map(event_height_lower_bound..event_height_upper_bound, & Cachex.get!(cache, &1))
+
+      if Enum.any?(events, fn event -> event == nil end) do
+        {:ok, newevents} = get_ethereum_events_callback.(event_height_lower_bound, event_height_upper_bound + 1000)
+
+        event_height_lower_bound..event_height_upper_bound + 1000
+        |> Enum.each(fn eth_height -> {:ok, true} = Cachex.put(cache, eth_height, []) end)
+
+        newevents
+        |> Enum.group_by(& &1.eth_height)
+        |> Enum.each(fn {eth_height, event} -> Cachex.put!(cache, eth_height, event) end)
+
+        _events = Enum.flat_map(event_height_lower_bound..event_height_upper_bound, & Cachex.get!(cache, &1))
+      else
+        events
+      end
+    end)
+    |> IO.inspect
   end
 
   defp schedule_get_events(interval) do

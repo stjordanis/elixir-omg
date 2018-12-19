@@ -70,6 +70,7 @@ defmodule OMG.API.TestHelper do
     new_state
   end
 
+
   @doc """
   convenience function around Transaction.new to create recovered transactions,
   by allowing to provider private keys of utxo owners along with the inputs

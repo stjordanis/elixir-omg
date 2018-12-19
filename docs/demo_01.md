@@ -41,6 +41,9 @@ tx =
   Transaction.Signed.encode() |>
   Base.encode16()
 
+#TODO change for wait deposit recognized
+:timer.sleep(1000)
+
 # submits a transaction to the child chain
 # this only will work after the deposit has been "consumed" by the child chain, be patient (~15sec)
 # use the hex-encoded tx bytes and `transaction.submit` Http-RPC method described in README.md for child chain server

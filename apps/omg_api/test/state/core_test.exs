@@ -855,6 +855,26 @@ defmodule OMG.API.State.CoreTest do
     |> fail?(:amounts_do_not_add_up)
   end
 
+  @tag fixtures: [:alice, :bob, :carol, :state_empty]
+  test "execute 4in 4out transaction", %{alice: alice, bob: bob, carol: carol, state_empty: state} do
+    state
+    |> Test.do_deposit(alice, %{amount: 5, currency: eth(), blknum: 1})
+    |> Test.do_deposit(alice, %{amount: 10, currency: eth(), blknum: 2})
+    |> Test.do_deposit(bob, %{amount: 15, currency: eth(), blknum: 3})
+    |> Test.do_deposit(carol, %{amount: 20, currency: eth(), blknum: 4})
+    |> (&Core.exec(
+          Test.create_recovered([{1, 0, 0, alice}, {2, 0, 0, alice}, {3, 0, 0, bob}, {4, 0, 0, carol}], eth(), [
+            {carol, 20},
+            {carol, 20},
+            {bob, 5},
+            {alice, 5}
+          ]),
+          zero_fees_map(),
+          &1
+        )).()
+    |> success?
+  end
+
   defp success?(result) do
     assert {:ok, _, state} = result
     state

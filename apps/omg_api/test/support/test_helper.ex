@@ -133,8 +133,8 @@ defmodule OMG.API.TestHelper do
         outputs |> Enum.map(fn {owner, currency, amount} -> {owner.addr, currency, amount} end)
       )
 
-    privs = get_private_keys(inputs)
-    Transaction.sign(raw_tx, privs)
+    priv_keys = get_private_keys(inputs)
+    Transaction.sign(raw_tx, priv_keys)
   end
 
   def create_encoded(inputs, currency, outputs) do

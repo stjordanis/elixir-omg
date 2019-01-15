@@ -856,7 +856,7 @@ defmodule OMG.API.State.CoreTest do
   end
 
   @tag fixtures: [:alice, :bob, :carol, :state_empty]
-  test "execute 4in 4out transaction", %{alice: alice, bob: bob, carol: carol, state_empty: state} do
+  test "execute 4in/4out transaction", %{alice: alice, bob: bob, carol: carol, state_empty: state} do
     state
     |> Test.do_deposit(alice, %{amount: 5, currency: eth(), blknum: 1})
     |> Test.do_deposit(alice, %{amount: 10, currency: eth(), blknum: 2})

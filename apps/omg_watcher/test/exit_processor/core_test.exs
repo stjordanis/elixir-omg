@@ -598,7 +598,7 @@ defmodule OMG.Watcher.ExitProcessor.CoreTest do
     # sanity: there are some piggybacks after piggybacking, to be removed later
     assert [%{piggybacked_inputs: [_]}, %{piggybacked_inputs: [_]}] = Core.get_in_flight_exits(processor)
     %{tx_hash: challenged_tx_hash} = to_challenge = hd(events)
-    {processor, _} = Core.challenge_piggybacks(processor, [to_challenge])
+    {processor, _} = Core.delete_challenged_piggybacks(processor, [to_challenge])
 
     # TODO test persistence separately
     assert [%{txhash: ^challenged_tx_hash, piggybacked_inputs: []}, %{piggybacked_inputs: [0]}] =
@@ -614,7 +614,7 @@ defmodule OMG.Watcher.ExitProcessor.CoreTest do
     {processor, _} = Core.new_piggybacks(processor, events)
     # sanity: there are some piggybacks after piggybacking, to be removed later
     assert [%{piggybacked_inputs: [_]}, %{piggybacked_inputs: [_]}] = Core.get_in_flight_exits(processor)
-    {processor, _} = Core.challenge_piggybacks(processor, events)
+    {processor, _} = Core.delete_challenged_piggybacks(processor, events)
 
     # TODO test persistence ersistence separately
     assert [%{piggybacked_inputs: []}, %{piggybacked_inputs: []}] = Core.get_in_flight_exits(processor)
@@ -623,13 +623,13 @@ defmodule OMG.Watcher.ExitProcessor.CoreTest do
   @tag fixtures: [:processor_filled, :in_flight_exits]
   test "challenge piggybacks sanity checks", %{processor_filled: state, in_flight_exits: [{tx_hash, ife}, _]} do
     # cannot challenge piggyback of unknown ife
-    assert {state, []} == Core.challenge_piggybacks(state, [%{tx_hash: 0, output_index: 0}])
+    assert {state, []} == Core.delete_challenged_piggybacks(state, [%{tx_hash: 0, output_index: 0}])
 
     # cannot challenge not piggybacked output
-    assert {state, []} == Core.challenge_piggybacks(state, [%{tx_hash: tx_hash, output_index: 0}])
+    assert {state, []} == Core.delete_challenged_piggybacks(state, [%{tx_hash: tx_hash, output_index: 0}])
 
     # other sanity checks
-    assert {state, []} == Core.challenge_piggybacks(state, [%{tx_hash: tx_hash, output_index: 8}])
+    assert {state, []} == Core.delete_challenged_piggybacks(state, [%{tx_hash: tx_hash, output_index: 8}])
 
     # challenged piggyback is considered as not piggybacked
     {:ok, piggybacked_ife} = InFlightExitInfo.piggyback(ife, 0)

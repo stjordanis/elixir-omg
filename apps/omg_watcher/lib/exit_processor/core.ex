@@ -283,8 +283,8 @@ defmodule OMG.Watcher.ExitProcessor.Core do
 
   # TODO: simplify flow
   # https://github.com/omisego/elixir-omg/pull/361#discussion_r247483185
-  @spec challenge_piggybacks(t(), [map()]) :: {t(), list()}
-  def challenge_piggybacks(%__MODULE__{in_flight_exits: ifes} = state, challenges) do
+  @spec delete_challenged_piggybacks(t(), [map()]) :: {t(), list()}
+  def delete_challenged_piggybacks(%__MODULE__{in_flight_exits: ifes} = state, challenges) do
     ifes_to_update =
       challenges
       |> Enum.map(fn %{tx_hash: tx_hash} -> tx_hash end)

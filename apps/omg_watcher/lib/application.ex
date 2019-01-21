@@ -205,7 +205,7 @@ defmodule OMG.Watcher.Application do
                synced_height_update_key: :last_piggyback_challenges_processor_eth_height,
                service_name: :piggyback_challenges_processor,
                get_events_callback: &OMG.Eth.RootChain.get_piggybacks_challenges/2,
-               process_events_callback: &OMG.Watcher.ExitProcessor.challenge_piggybacks/1
+               process_events_callback: &OMG.Watcher.ExitProcessor.delete_challenged_piggybacks/1
              }
            ]}
       },

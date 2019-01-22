@@ -90,14 +90,14 @@ defmodule OMG.Watcher.ExitProcessor.CoreTest do
       transactions
       |> Enum.map(&Transaction.encode/1)
 
-    [tx1_sigs, tx2_sigs] =
+    [tx1_signs, tx2_signs] =
       transactions
       |> Enum.map(&DevCrypto.sign(&1, [alice_priv, alice_priv]))
       |> Enum.map(&Enum.join(&1.sigs))
 
     [
-      %{call_data: %{in_flight_tx: tx1_bytes, in_flight_tx_sigs: tx1_sigs}, eth_height: 2},
-      %{call_data: %{in_flight_tx: tx2_bytes, in_flight_tx_sigs: tx2_sigs}, eth_height: 4}
+      %{call_data: %{in_flight_tx: tx1_bytes, in_flight_tx_sigs: tx1_signs}, eth_height: 2},
+      %{call_data: %{in_flight_tx: tx2_bytes, in_flight_tx_sigs: tx2_signs}, eth_height: 4}
     ]
   end
 

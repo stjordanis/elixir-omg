@@ -218,6 +218,7 @@ defmodule OMG.API.State.Transaction do
         List.duplicate([@zero_address, @zero_address, 0], 4 - length(outputs))
     ]
 
+  @spec hash(t()) :: Crypto.hash_t()
   def hash(%__MODULE__{} = tx) do
     tx
     |> encode

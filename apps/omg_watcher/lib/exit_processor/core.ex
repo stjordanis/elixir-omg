@@ -23,6 +23,7 @@ defmodule OMG.Watcher.ExitProcessor.Core do
   alias OMG.API.Block
   alias OMG.API.Crypto
   alias OMG.API.State.Transaction
+  alias OMG.API.State.Transaction.Signed
   alias OMG.API.Utxo
   require Utxo
   alias OMG.Watcher.Challenger.Tools
@@ -62,6 +63,14 @@ defmodule OMG.Watcher.ExitProcessor.Core do
           in_flight_txbytes: binary(),
           in_flight_tx_pos: Utxo.Position.t(),
           in_flight_proof: binary()
+        }
+
+  @type input_challenge_data :: %{
+          in_flight_txbytes: Transaction.tx_bytes(),
+          in_flight_input_index: 0..3,
+          spending_tx_bytes: Transaction.tx_bytes(),
+          spending_input_index: 0..3,
+          spending_sig: <<_::520>>
         }
 
   defmodule KnownTx do
@@ -569,6 +578,80 @@ defmodule OMG.Watcher.ExitProcessor.Core do
     {chain_validity, events}
   end
 
+  @spec get_output_challenge_data(ExitProcessor.Request.t(), t(), Signed.tx_bytes(), 4..7) :: %{
+          in_flight_txbytes: Transaction.tx_bytes(),
+          in_flight_output_pos: Utxo.Position.t(),
+          in_flight_tx_inclusion_proof: <<_::_*256>>,
+          spending_tx_bytes: Transaction.tx_bytes(),
+          spending_input_index: 0..3,
+          spending_sig: <<_::520>>
+        }
+  def get_output_challenge_data(
+        %ExitProcessor.Request{blocks_result: blocks, piggybacked_blocks_result: piggybacked_blocks} = request,
+        %__MODULE__{in_flight_exits: ifes} = state,
+        _txbytes,
+        _output_index
+      ) do
+    #   "in_flight_txbytes": "F3170101C0940000...",
+    #   "in_flight_output_pos": 21000634002,
+    #   "in_flight_proof": "03F451067A805540000...",
+    #   "spending_txbytes": "F847010180808080940000...",
+    #   "spending_input_index": 1,
+    #   "spending_sig": "9A23010180808080940000..."
+  end
+
+  @spec get_input_challenge_data(ExitProcessor.Request.t(), t(), Signed.tx_bytes(), 0..3) ::
+          {:ok, input_challenge_data()} | {:error, atom()}
+  def get_input_challenge_data(
+        request,
+        %__MODULE__{in_flight_exits: ifes} = state,
+        txbytes,
+        input_index
+      ) do
+    with {:ok, tx} <- Transaction.decode(txbytes),
+         {:known_ife, true} <- {:known_ife, tx in Enum.map(ifes, & &1.tx.raw_tx)},
+         {:ok, proof_data} <- produce_proofs_and_find_the_requested_one(request, state, tx, input_index) do
+      %{
+        in_flight_txbytes: txbytes,
+        in_flight_input_index: 3,
+        spending_tx_bytes: <<>>,
+        spending_input_index: 0,
+        spending_sig: <<>>
+      }
+    else
+      {:known_ife, []} -> {:error, :unknown_ife}
+      error -> error
+    end
+  end
+
+  defp produce_proofs_and_find_the_requested_one(
+         %ExitProcessor.Request{blocks_result: blocks, piggybacked_blocks_result: piggybacked_blocks} = request,
+         %__MODULE__{in_flight_exits: ifes} = state,
+         tx,
+         input_index
+       ) do
+    known_txs = get_known_txs(Enum.uniq(piggybacked_blocks ++ blocks)) ++ get_known_txs(state)
+
+    compute_proofs = fn ->
+      get_invalid_piggybacks_on_inputs(known_txs, state)
+      |> Enum.filter(fn {ife, bad_pbs, _, proof} -> ife.tx == tx end)
+    end
+
+    with {:found_conflicts, [{ife, bad_pbs, _, proof}]} <- {:found_conflicts, compute_proofs.()},
+         {:found_pb, true} <- {:found_pb, input_index in bad_pbs} do
+      %{
+        in_flight_txbytes: Transaction.encode(tx),
+        in_flight_input_index: input_index,
+        spending_tx_bytes: XXX,
+        spending_input_index: 5,
+        spending_sig: <<>>
+      }
+    else
+      {:found_conflicts, []} -> {:error, :no_double_spent_inputs_in_requested_ife}
+      {:found_pb, false} -> {:error, :no_double_spent_on_particular_input}
+    end
+  end
+
   @spec get_invalid_piggybacks(ExitProcessor.Request.t(), __MODULE__.t()) :: [{binary, [0..3], [0..3]}]
   def get_invalid_piggybacks(
         %ExitProcessor.Request{blocks_result: blocks, piggybacked_blocks_result: piggybacked_blocks},
@@ -589,7 +672,8 @@ defmodule OMG.Watcher.ExitProcessor.Core do
   end
 
   @spec get_invalid_piggybacks_on_inputs([KnownTx.t()], t()) :: [
-          {tx_hash(), [non_neg_integer()], [non_neg_integer()], [{double_spending_tx :: KnownTx.t(), 0..3}]}
+          {tx_hash(), [non_neg_integer()], [non_neg_integer()],
+           [{double_spending_tx :: KnownTx.t(), Utxo.Position.t(), 0..3}]}
         ]
   defp get_invalid_piggybacks_on_inputs(known_txs, %__MODULE__{in_flight_exits: ifes}) do
     # getting invalid piggybacks on inputs

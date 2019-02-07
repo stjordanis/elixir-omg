@@ -963,8 +963,56 @@ defmodule OMG.Watcher.ExitProcessor.CoreTest do
       # IFE is not canonical
       assert {:ok, [%Event.InvalidPiggyback{txbytes: ^txbytes, inputs: [0], outputs: []}]} =
                invalid_exits_filtered(request, state, only: [Event.InvalidPiggyback])
+    end
 
-      # FIXME: test and implement that we can `inflight_exit.get_input_challenge_data` similar to competitor getting
+    # FIXME: test and implement that we can `inflight_exit.get_input_challenge_data` similar to competitor getting
+    @tag :wrong
+    @tag fixtures: [:alice, :processor_filled, :transactions, :in_flight_exits, :competing_transactions]
+    test "can produce the challenge proofs for a input piggyback",
+         %{
+           alice: alice,
+           processor_filled: state,
+           transactions: [tx | _],
+           competing_transactions: [comp | _],
+           in_flight_exits: [{ife_id, _} | _]
+         } do
+      txbytes = Transaction.encode(tx)
+      comp_txbytes = Transaction.encode(comp)
+
+      {:ok, recovered} = DevCrypto.sign(tx, [alice.priv, alice.priv]) |> Transaction.Recovered.recover_from()
+      %{sigs: [_, other_signature]} = DevCrypto.sign(comp, [<<>>, alice.priv])
+
+      other_ife_event = %{call_data: %{in_flight_tx: comp_txbytes, in_flight_tx_sigs: other_signature}, eth_height: 2}
+      other_ife_status = {1, <<1::192>>}
+
+      {state, _} = Core.new_in_flight_exits(state, [other_ife_event], [other_ife_status])
+      {state, _} = Core.new_piggybacks(state, [%{tx_hash: ife_id, output_index: 0}])
+
+      tx_blknum = 3000
+
+      {request, state} =
+        %ExitProcessor.Request{
+          blknum_now: 4000,
+          eth_height_now: 5,
+          piggybacked_blocks_result: [Block.hashed_txs_at([recovered], tx_blknum)]
+        }
+        |> Core.find_ifes_in_blocks(state)
+
+      assert {:ok, [%Event.InvalidPiggyback{txbytes: ^txbytes, inputs: [0], outputs: []}]} =
+               invalid_exits_filtered(request, state, only: [Event.InvalidPiggyback])
+
+      assert {:ok, %{in_flight_input_index: 0}} = Core.get_output_challenge_data(request, state, txbytes, 0)
+    end
+
+    @tag fixtures: [:alice, :processor_filled, :transactions, :in_flight_exits, :competing_transactions]
+    test "can produce the challenge proofs for a output piggyback",
+         %{
+           alice: _alice,
+           processor_filled: _state,
+           transactions: [_tx | _],
+           competing_transactions: [_comp | _],
+           in_flight_exits: [{_ife_id, _} | _]
+         } do
     end
   end
 

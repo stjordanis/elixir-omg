@@ -34,6 +34,7 @@ defmodule OMG.API.State.Transaction do
         }
 
   @type currency() :: Crypto.address_t()
+  @type tx_bytes() :: binary()
 
   @type input() :: %{
           blknum: non_neg_integer(),
@@ -193,6 +194,7 @@ defmodule OMG.API.State.Transaction do
   defp parse_address(<<_::160>> = address_bytes), do: {:ok, address_bytes}
   defp parse_address(_), do: {:error, :malformed_address}
 
+  @spec decode(tx_bytes()) :: {:ok, t()} | {:error, atom()}
   def decode(tx_bytes) do
     with {:ok, raw_tx_rlp_decoded_chunks} <- try_exrlp_decode(tx_bytes),
          do: reconstruct(raw_tx_rlp_decoded_chunks)
@@ -204,6 +206,7 @@ defmodule OMG.API.State.Transaction do
     _ -> {:error, :malformed_transaction_rlp}
   end
 
+  @spec encode(t()) :: tx_bytes()
   def encode(transaction) do
     get_filled_inputs_and_outputs(transaction)
     |> ExRLP.encode()
